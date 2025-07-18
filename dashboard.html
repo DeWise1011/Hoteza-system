@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HOTEZA - Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+    <div class="background-blur"></div>
+    <div class="app-container">
+        <header class="dashboard-header">
+            <div class="header-left">
+                <button class="menu-toggle btn-hover" id="menu-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="logo-container">
+                    <i class="fas fa-utensils logo-icon"></i>
+                    <h1 class="logo-text">HOTEZA</h1>
+                </div>
+            </div>
+            
+            <div class="header-right">
+                <div class="notifications btn-hover">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge">3</span>
+                </div>
+                
+                <div class="user-profile">
+                    <img src="https://via.placeholder.com/40" alt="User" id="user-avatar">
+                    <span id="user-name">Admin</span>
+                    <i class="fas fa-caret-down"></i>
+                    
+                    <div class="user-dropdown">
+                        <a href="#" id="account-btn"><i class="fas fa-user-cog"></i> My Account</a>
+                        <a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <div class="dashboard-layout">
+            <!-- Sidebar Navigation -->
+            <aside class="sidebar" id="sidebar">
+                <nav class="sidebar-nav">
+                    <div class="nav-header">
+                        <h3>Navigation</h3>
+                    </div>
+                    
+                    <ul class="nav-menu">
+                        <li>
+                            <a href="#" class="nav-link active" data-page="dashboard-home">
+                                <i class="fas fa-home"></i> <span>Dashboard</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="nav-link" data-page="waiter-management">
+                                <i class="fas fa-user-tie"></i> <span>Waiters</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="nav-link" data-page="order-management">
+                                <i class="fas fa-clipboard-list"></i> <span>Orders</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="nav-link" data-page="food-service">
+                                <i class="fas fa-utensils"></i> <span>Menu</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="nav-link" data-page="expenses">
+                                <i class="fas fa-wallet"></i> <span>Expenses</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="nav-link" data-page="reports">
+                                <i class="fas fa-chart-bar"></i> <span>Reports</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a href="#" class="nav-link" data-page="subscription">
+                                <i class="fas fa-credit-card"></i> <span>Subscription</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-page="floor-planner">
+                                <i class="fas fa-vector-square"></i>
+                                <span>Floor Planner</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+                
+                <div class="sidebar-footer">
+                    <div class="subscription-status">
+                        <div class="status-indicator active"></div>
+                        <span>Active Subscription</span>
+                    </div>
+                    <button class="btn btn-support btn-hover" id="help-support-btn">
+                        <i class="fas fa-question-circle"></i> <span>Help & Support</span>
+                    </button>
+                </div>
+            </aside>
+            
+            <!-- Main Content Area -->
+            <main class="main-content" id="main-content">
+                <!-- Dashboard Home -->
+                <div id="dashboard-home" class="content-page active"></div>
+                
+                <!-- Other Pages -->
+                <div id="waiter-management" class="content-page"></div>
+                <div id="order-management" class="content-page"></div>
+                <div id="food-service" class="content-page"></div>
+                <div id="expenses" class="content-page"></div>
+                <div id="reports" class="content-page"></div>
+                <div id="subscription" class="content-page"></div>
+                <div id="account-page" class="content-page"></div>
+                <div id="floor-planner" class="content-page">
+  <div class="fp-container">
+    <!-- Toolbar with modern icons -->
+    <div class="fp-toolbar">
+      <div class="fp-toolbar-section">
+        <h4>STRUCTURE</h4>
+        <div class="fp-tool-grid">
+          <button class="fp-tool" data-tool="wall" data-type="straight">
+            <svg class="fp-icon" viewBox="0 0 24 24"><path d="M3,3H21V5H3V3M3,7H21V9H3V7M3,11H21V13H3V11M3,15H21V17H3V15M3,19H21V21H3V19Z"/></svg>
+            <span>Wall</span>
+          </button>
+          <button class="fp-tool" data-tool="column">
+            <svg class="fp-icon" viewBox="0 0 24 24"><path d="M16,2H8A2,2 0 0,0 6,4V20A2,2 0 0,0 8,22H16A2,2 0 0,0 18,20V4A2,2 0 0,0 16,2M16,20H8V4H16V20Z"/></svg>
+            <span>Column</span>
+          </button>
+        </div>
+      </div>
+      
+      <div class="fp-toolbar-section">
+        <h4>FURNITURE</h4>
+        <div class="fp-tool-grid">
+          <button class="fp-tool" data-tool="table" data-type="round">
+            <svg class="fp-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>
+            <span>Round Table</span>
+          </button>
+          <button class="fp-tool" data-tool="table" data-type="rect">
+            <svg class="fp-icon" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16"/></svg>
+            <span>Rect Table</span>
+          </button>
+        </div>
+      </div>
+      
+      <div class="fp-toolbar-section">
+        <h4>TOOLS</h4>
+        <div class="fp-tool-grid">
+          <button class="fp-tool" data-tool="select">
+            <svg class="fp-icon" viewBox="0 0 24 24"><path d="M13,9A1,1 0 0,1 14,8A1,1 0 0,1 15,9V13.47L16.21,13.6L21.15,15.8C21.67,16.04 22,16.56 22,17.14V21.5C21.97,22.32 21.32,22.97 20.5,23H14C13.62,23 13.26,22.85 13,22.57L8.1,18.37L8.84,17.6C9.03,17.39 9.3,17.28 9.58,17.28H9.8L13,19V9M9.47,4.08L10.5,3.34C10.5,3.34 11.53,2.55 11.53,2.55C11.73,2.38 12,2.55 12,2.55L13.5,3.59C13.5,3.59 14.5,4.33 14.5,4.33C14.68,4.5 14.5,4.77 14.5,4.77L13.47,5.5L12,4.5L9.47,6.08C9.47,6.08 8.5,6.82 8.5,6.82C8.32,6.96 8.05,6.82 8.05,6.62L8.05,4.33C8.05,4.13 8.32,4 8.5,4.08L9.47,4.08Z"/></svg>
+            <span>Select</span>
+          </button>
+          <button class="fp-tool" data-tool="measure">
+            <svg class="fp-icon" viewBox="0 0 24 24"><path d="M3,4H5V10H7V4H9V18H7V12H5V18H3V4M11,4H13V10H15V4H17V18H15V12H13V18H11V4M19,4H21V10H23V4H25V18H23V12H21V18H19V4Z"/></svg>
+            <span>Measure</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Main canvas area -->
+    <div class="fp-canvas-container">
+      <div class="fp-grid-overlay" id="grid-overlay"></div>
+      <div class="fp-construction-plane">
+        <div class="fp-items-container" id="items-container"></div>
+      </div>
+      <div class="fp-ruler-horizontal"></div>
+      <div class="fp-ruler-vertical"></div>
+    </div>
+    
+    <!-- Properties panel -->
+    <div class="fp-properties">
+      <div class="fp-properties-header">
+        <h4>PROPERTIES</h4>
+        <button class="fp-close-properties">
+          <svg viewBox="0 0 24 24"><path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/></svg>
+        </button>
+      </div>
+      <div class="fp-properties-content" id="properties-content">
+        <div class="fp-empty-state">
+          <svg viewBox="0 0 24 24"><path d="M9,3V4H4V6H5V19A2,2 0 0,0 7,21H17A2,2 0 0,0 19,19V6H20V4H15V3H9M7,6H17V19H7V6M9,8V17H11V8H9M13,8V17H15V8H13Z"/></svg>
+          <p>Select an element to edit properties</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Include Chart.js for reports -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
