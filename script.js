@@ -368,9 +368,6 @@ class HotezaApp {
                     <button class="btn btn-action" data-page="order-management">
                         <i class="fas fa-plus-circle"></i> New Order
                     </button>
-                    <button class="btn btn-action" data-page="waiter-management">
-                        <i class="fas fa-user-plus"></i> Add Waiter
-                    </button>
                     <button class="btn btn-action" data-page="food-service">
                         <i class="fas fa-utensil-spoon"></i> Add Menu Item
                     </button>
@@ -491,9 +488,9 @@ renderWaiterManagement() {
                             <label for="waiter-shift">Shift</label>
                             <select id="waiter-shift" required>
                                 <option value="">Select Shift</option>
-                                <option value="morning">Morning (8AM-2PM)</option>
-                                <option value="afternoon">Afternoon (2PM-8PM)</option>
-                                <option value="night">Night (8PM-2AM)</option>
+                                <option value="morning">Morning (6AM-6PM)</option>
+                                <option value="evening">Evening (7PM-12AM)</option>
+                                <option value="night">Night (12AM-6AM)</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -511,9 +508,7 @@ renderWaiterManagement() {
                 <h3><i class="fas fa-list"></i> Current Waiters</h3>
                 <div class="waiter-table">
                     <div class="table-header">
-                        <span>ID</span>
                         <span>Name</span>
-                        <span>Table(s)</span>
                         <span>No. of Orders</span>
                         <span>Total (TZS)</span>
                         <span>Actions</span>
@@ -646,9 +641,9 @@ renderWaitersList() {
                     <div class="form-group">
                         <label for="edit-waiter-shift">Shift</label>
                         <select id="edit-waiter-shift" required>
-                            <option value="morning" ${waiter.shift === 'morning' ? 'selected' : ''}>Morning (8AM-2PM)</option>
-                            <option value="afternoon" ${waiter.shift === 'afternoon' ? 'selected' : ''}>Afternoon (2PM-8PM)</option>
-                            <option value="night" ${waiter.shift === 'night' ? 'selected' : ''}>Night (8PM-2AM)</option>
+                            <option value="morning" ${waiter.shift === 'morning' ? 'selected' : ''}>Morning (6AM-6PM)</option>
+                            <option value="evening" ${waiter.shift === 'evening' ? 'selected' : ''}>evening (7PM-12AM)</option>
+                            <option value="night" ${waiter.shift === 'night' ? 'selected' : ''}>Night (12AM-6AM)</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -746,13 +741,11 @@ renderWaitersList() {
 
             <div class="orders-table">
                 <div class="table-header">
-                    <span>Order ID</span>
                     <span>Table</span>
                     <span>Waiter</span>
                     <span>Items</span>
                     <span>Total</span>
                     <span>Status</span>
-                    <span>Actions</span>
                 </div>
                 <div class="table-body" id="orders-list"></div>
                 <div class="table-footer">
@@ -1029,7 +1022,6 @@ renderWaitersList() {
             grandTotal += order.total;
             
             orderEl.innerHTML = `
-                <span>${order.id}</span>
                 <span>${order.table}</span>
                 <span>${order.waiter}</span>
                 <span class="order-items">${itemsList}</span>
