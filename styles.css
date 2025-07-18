@@ -2313,3 +2313,166 @@ select.input-field {
 .fp-button:hover {
   background: #5373ff;
 }
+
+/* Responsive tables */
+@media (max-width: 768px) {
+  .waiter-table, .orders-table, .expenses-table {
+    font-size: 12px;
+    overflow-x: auto;
+    display: block;
+    white-space: nowrap;
+  }
+  
+  .table-header, .table-body {
+    min-width: 600px; /* Force horizontal scrolling */
+  }
+  
+  .waiter-item, .order-item, .expense-item {
+    padding: 6px 4px;
+  }
+  
+  .action-buttons button {
+    padding: 4px 6px;
+    font-size: 11px;
+  }
+  
+  .status-badge {
+    font-size: 10px;
+    padding: 2px 4px;
+  }
+  
+  /* Make action buttons more compact */
+  .btn-edit, .btn-delete, .btn-mark-paid {
+    min-width: auto;
+    padding: 2px 4px;
+    margin: 0 2px;
+  }
+  
+  /* Hide icons in buttons on mobile */
+  .mobile-only {
+    display: inline;
+  }
+  
+  .btn i {
+    display: none;
+  }
+}
+
+/* General mobile optimizations */
+@media (max-width: 768px) {
+  /* Make tables scroll horizontally */
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Reduce padding in table cells */
+  .table-header span, 
+  .table-body .waiter-item span,
+  .table-body .order-item span,
+  .table-body .expense-item span {
+    padding: 4px 6px;
+  }
+  
+  /* Truncate long text */
+  .order-items {
+    max-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: inline-block;
+  }
+  
+  /* Make action buttons more compact */
+  .action-buttons {
+    display: flex;
+    gap: 4px;
+  }
+  
+  .action-buttons button {
+    min-width: 40px;
+  }
+}
+
+/* Ensure everything scales */
+html {
+  font-size: 16px;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Responsive container */
+.auth-container {
+  width: 100%;
+  max-width: 480px;
+  margin: auto;
+  padding: 20px;
+}
+
+.table-responsive {
+  overflow-x: auto;
+  width: 100%;
+}
+
+.table-responsive table {
+  width: 100%;
+  min-width: 600px;
+  border-collapse: collapse;
+}
+
+.input-field {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  margin-bottom: 15px;
+  font-size: 1rem;
+  transition: border-color 0.2s ease-in-out;
+}
+
+.input-field:focus {
+  border-color: #007bff;
+  outline: none;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+}
+
+.btn {
+  padding: 12px 20px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .auth-card, .auth-container {
+    padding: 15px;
+    border-radius: 15px;
+  }
+
+  h1, h2 {
+    font-size: 1.5rem;
+  }
+
+  .btn {
+    font-size: 0.9rem;
+    padding: 10px 16px;
+  }
+
+  .form-group {
+    margin-bottom: 15px;
+  }
+
+  .logo-text {
+    font-size: 2rem;
+  }
+}
