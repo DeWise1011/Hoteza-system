@@ -27,13 +27,37 @@ class HotezaApp {
     }
 
     initApp() {
+        this.setupGlobalEventListeners();
+        
         if (document.getElementById('login-page') || document.getElementById('signup-page')) {
             this.initAuth();
         } else if (document.getElementById('dashboard-home')) {
             this.initDashboard();
         }
         
-        this.loadSampleData();
+        this.loadData();
+    }
+
+    setupGlobalEventListeners() {
+        // Mobile menu toggle
+        document.addEventListener('click', (e) => {
+            const sidebar = document.getElementById('sidebar');
+            if (window.innerWidth <= 1024 && sidebar && 
+                !e.target.closest('#sidebar') && 
+                !e.target.closest('#menu-toggle')) {
+                sidebar.classList.remove('active');
+            }
+        });
+
+        // Window resize handler
+        window.addEventListener('resize', this.handleWindowResize.bind(this));
+    }
+
+    handleWindowResize() {
+        if (window.innerWidth > 1024) {
+            const sidebar = document.getElementById('sidebar');
+            if (sidebar) sidebar.classList.remove('active');
+        }
     }
 
     getFutureDate(days) {
@@ -51,6 +75,8 @@ class HotezaApp {
 
     // ==================== AUTHENTICATION ====================
     initAuth() {
+        this.setupAuthNavigation();
+        
         document.getElementById('login-form')?.addEventListener('submit', (e) => {
             e.preventDefault();
             this.handleLogin();
@@ -60,8 +86,6 @@ class HotezaApp {
             e.preventDefault();
             this.handleSignup();
         });
-
-        this.setupAuthNavigation();
     }
 
     setupAuthNavigation() {
@@ -103,9 +127,7 @@ class HotezaApp {
             profileImage: "https://via.placeholder.com/150"
         };
         
-        localStorage.setItem('hoteza_user', JSON.stringify(this.currentUser));
-        localStorage.setItem('hoteza_subscription', JSON.stringify(this.subscription));
-        
+        this.saveData();
         window.location.href = "dashboard.html";
     }
 
@@ -136,7 +158,6 @@ class HotezaApp {
             return;
         }
 
-        // Create user object
         this.currentUser = {
             name: fullName,
             email: email,
@@ -146,9 +167,7 @@ class HotezaApp {
             profileImage: "https://via.placeholder.com/150"
         };
         
-        localStorage.setItem('hoteza_user', JSON.stringify(this.currentUser));
-        localStorage.setItem('hoteza_subscription', JSON.stringify(this.subscription));
-        
+        this.saveData();
         document.getElementById('signup-form').reset();
         window.location.href = "dashboard.html";
     }
@@ -167,20 +186,11 @@ class HotezaApp {
             this.subscription = JSON.parse(subscriptionData);
         }
         
+        this.loadData();
         this.updateUI();
         this.initSidebar();
         this.initContentPages();
         this.initUserMenu();
-        
-        // Load data from localStorage
-        this.waiters = JSON.parse(localStorage.getItem('hoteza_waiters') || this.waiters);
-        this.orders = JSON.parse(localStorage.getItem('hoteza_orders') || this.orders);
-        this.menuItems = JSON.parse(localStorage.getItem('hoteza_menuItems') || this.menuItems);
-        this.expenses = JSON.parse(localStorage.getItem('hoteza_expenses') || this.expenses);
-        this.vouchers = JSON.parse(localStorage.getItem('hoteza_vouchers') || this.vouchers);
-        this.walletBalance = parseFloat(localStorage.getItem('hoteza_walletBalance')) || 0;
-        
-        // Check if we need to reset daily orders
         this.checkDailyReset();
     }
 
@@ -190,7 +200,7 @@ class HotezaApp {
         
         if (lastReset !== today) {
             this.subscription.ordersToday = 0;
-            localStorage.setItem('hoteza_subscription', JSON.stringify(this.subscription));
+            this.saveData('hoteza_subscription', this.subscription);
             localStorage.setItem('hoteza_lastReset', today);
         }
     }
@@ -280,6 +290,101 @@ class HotezaApp {
         }
     }
 
+    // ==================== DATA MANAGEMENT ====================
+    loadData() {
+        this.waiters = JSON.parse(localStorage.getItem('hoteza_waiters') || '[]');
+        this.orders = JSON.parse(localStorage.getItem('hoteza_orders') || '[]');
+        this.menuItems = JSON.parse(localStorage.getItem('hoteza_menuItems') || '[]');
+        this.expenses = JSON.parse(localStorage.getItem('hoteza_expenses') || '[]');
+        this.vouchers = JSON.parse(localStorage.getItem('hoteza_vouchers') || '[]');
+        this.walletBalance = parseFloat(localStorage.getItem('hoteza_walletBalance')) || 0;
+        
+        // Load sample data if no data exists
+        if (this.waiters.length === 0 && this.orders.length === 0) {
+            this.loadSampleData();
+        }
+    }
+
+    saveData(key = null, data = null) {
+        if (key && data) {
+            localStorage.setItem(key, JSON.stringify(data));
+        } else {
+            localStorage.setItem('hoteza_user', JSON.stringify(this.currentUser));
+            localStorage.setItem('hoteza_subscription', JSON.stringify(this.subscription));
+            localStorage.setItem('hoteza_waiters', JSON.stringify(this.waiters));
+            localStorage.setItem('hoteza_orders', JSON.stringify(this.orders));
+            localStorage.setItem('hoteza_menuItems', JSON.stringify(this.menuItems));
+            localStorage.setItem('hoteza_expenses', JSON.stringify(this.expenses));
+            localStorage.setItem('hoteza_vouchers', JSON.stringify(this.vouchers));
+            localStorage.setItem('hoteza_walletBalance', this.walletBalance.toString());
+        }
+    }
+
+    loadSampleData() {
+        // Sample waiters
+        this.waiters = [
+            { id: 1, name: 'John Doe', shift: 'morning', tables: '1-5,10', color: '#4361ee' },
+            { id: 2, name: 'Jane Smith', shift: 'afternoon', tables: '6-9,12', color: '#f72585' },
+            { id: 3, name: 'Mike Johnson', shift: 'night', tables: '11,13-15', color: '#4cc9f0' }
+        ];
+        
+        // Sample menu items
+        this.menuItems = [
+            { id: 1, name: 'Chicken Curry', price: 12000, category: 'Main Course', type: 'food' },
+            { id: 2, name: 'Beef Steak', price: 15000, category: 'Main Course', type: 'food' },
+            { id: 3, name: 'Vegetable Soup', price: 8000, category: 'Starter', type: 'food' },
+            { id: 4, name: 'Soda', price: 2000, category: 'Beverages', type: 'drink' },
+            { id: 5, name: 'Room Service', price: 5000, category: 'Services', type: 'service' }
+        ];
+        
+        // Sample orders
+        const today = new Date().toISOString().split('T')[0];
+        this.orders = [
+            {
+                id: 'ORD-1001',
+                date: today,
+                waiter: 'John Doe',
+                waiterId: 1,
+                table: 5,
+                items: [
+                    { id: 1, name: 'Chicken Curry', quantity: 2, price: 12000 },
+                    { id: 4, name: 'Soda', quantity: 2, price: 2000 }
+                ],
+                total: 28000,
+                paymentMethod: 'mpesa',
+                status: 'completed'
+            },
+            {
+                id: 'ORD-1002',
+                date: today,
+                waiter: 'Jane Smith',
+                waiterId: 2,
+                table: 8,
+                items: [
+                    { id: 2, name: 'Beef Steak', quantity: 1, price: 15000 },
+                    { id: 3, name: 'Vegetable Soup', quantity: 1, price: 8000 }
+                ],
+                total: 23000,
+                paymentMethod: 'cash',
+                status: 'pending'
+            }
+        ];
+        
+        // Sample expenses
+        this.expenses = [
+            { name: 'Groceries', amount: 50000, date: today },
+            { name: 'Utilities', amount: 15000, date: today }
+        ];
+        
+        // Sample vouchers
+        this.vouchers = [
+            { id: 'VOU-5001', date: today, orders: 250, price: 5000, remaining: 150 },
+            { id: 'VOU-5002', date: today, orders: 500, price: 10000, remaining: 500 }
+        ];
+        
+        this.saveData();
+    }
+
     // ==================== PAGE RENDERERS ====================
     renderDashboardHome() {
         const container = document.getElementById('dashboard-home');
@@ -340,39 +445,19 @@ class HotezaApp {
                         <span class="stat-value" id="menu-items">0</span>
                     </div>
                 </div>
-                
-                <div class="stat-card profit-card">
-                    <div class="stat-icon bg-success-light">
-                        <i class="fas fa-chart-line text-success"></i>
-                    </div>
-                    <div class="stat-info">
-                        <h3>Today's Profit</h3>
-                        <span class="stat-value" id="daily-profit">0 TZS</span>
-                    </div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-icon bg-secondary-light">
-                        <i class="fas fa-credit-card text-secondary"></i>
-                    </div>
-                    <div class="stat-info">
-                        <h3>Wallet Balance</h3>
-                        <span class="stat-value" id="wallet-balance">0 TZS</span>
-                    </div>
-                </div>
             </div>
             
             <div class="quick-actions">
                 <h3>Quick Actions</h3>
                 <div class="action-buttons">
                     <button class="btn btn-action" data-page="order-management">
-                        <i class="fas fa-plus-circle"></i> New Order
+                        <i class="fas fa-plus-circle"></i> <span class="action-text">New Order</span>
+                    </button>
+                    <button class="btn btn-action" data-page="waiter-management">
+                        <i class="fas fa-user-plus"></i> <span class="action-text">Add Waiter</span>
                     </button>
                     <button class="btn btn-action" data-page="food-service">
-                        <i class="fas fa-utensil-spoon"></i> Add Menu Item
-                    </button>
-                    <button class="btn btn-action" data-page="reports">
-                        <i class="fas fa-file-invoice-dollar"></i> View Reports
+                        <i class="fas fa-utensil-spoon"></i> <span class="action-text">Add Menu Item</span>
                     </button>
                 </div>
             </div>
@@ -382,10 +467,9 @@ class HotezaApp {
                 <div class="orders-table">
                     <div class="table-header">
                         <span>Order ID</span>
-                        <span>Waiter</span>
+                        <span class="desktop-only">Waiter</span>
                         <span>Items</span>
                         <span>Total</span>
-                        <span>Status</span>
                     </div>
                     <div class="table-body" id="recent-orders-list"></div>
                 </div>
@@ -419,14 +503,11 @@ class HotezaApp {
         const todayRevenue = todayOrders.reduce((sum, order) => sum + order.total, 0);
         const todayExpenses = this.expenses.filter(exp => exp.date === today)
             .reduce((sum, exp) => sum + exp.amount, 0);
-        const todayProfit = todayRevenue - todayExpenses;
         
         document.getElementById('today-orders').textContent = todayOrders.length;
         document.getElementById('today-revenue').textContent = `${todayRevenue.toLocaleString()} TZS`;
         document.getElementById('active-waiters').textContent = this.waiters.length;
         document.getElementById('menu-items').textContent = this.menuItems.length;
-        document.getElementById('daily-profit').textContent = `${todayProfit.toLocaleString()} TZS`;
-        document.getElementById('wallet-balance').textContent = `${this.walletBalance.toLocaleString()} TZS`;
         
         this.updateRecentOrders(todayOrders);
     }
@@ -447,133 +528,106 @@ class HotezaApp {
             orderEl.className = 'order-item';
             orderEl.innerHTML = `
                 <span>${order.id}</span>
-                <span>${order.waiter}</span>
+                <span class="desktop-only">${order.waiter}</span>
                 <span>${order.items.map(i => i.name).join(', ')}</span>
                 <span>${order.total.toLocaleString()} TZS</span>
-                <span class="status-badge ${order.status}">${this.capitalizeFirstLetter(order.status)}</span>
             `;
             container.appendChild(orderEl);
         });
     }
 
     // ==================== WAITER MANAGEMENT ====================
-renderWaiterManagement() {
-    const container = document.getElementById('waiter-management');
-    if (!container) return;
-    
-    container.innerHTML = `
-        <div class="content-header">
-            <h2><i class="fas fa-user-tie"></i> Waiter Management</h2>
-            <div class="breadcrumbs">
-                <span>Home</span> <i class="fas fa-chevron-right"></i> <span>Waiters</span>
-            </div>
-        </div>
-
-        <div class="waiter-controls">
-            <div class="control-section">
-                <h3><i class="fas fa-user-plus"></i> Add Waiter</h3>
-                <form id="add-waiter-form">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="waiter-name">Waiter Name</label>
-                            <input type="text" id="waiter-name" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="waiter-id">Waiter ID (1-27)</label>
-                            <input type="number" id="waiter-id" min="1" max="27" required>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="waiter-shift">Shift</label>
-                            <select id="waiter-shift" required>
-                                <option value="">Select Shift</option>
-                                <option value="morning">Morning (6AM-6PM)</option>
-                                <option value="evening">Evening (7PM-12AM)</option>
-                                <option value="night">Night (12AM-6AM)</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="waiter-tables">Assign Tables (1-100)</label>
-                            <input type="text" id="waiter-tables" placeholder="e.g., 1,5,7-10">
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i> Add Waiter
-                    </button>
-                </form>
-            </div>
-
-            <div class="waiter-list-section">
-                <h3><i class="fas fa-list"></i> Current Waiters</h3>
-                <div class="waiter-table">
-                    <div class="table-header">
-                        <span>Name</span>
-                        <span>No. of Orders</span>
-                        <span>Total (TZS)</span>
-                        <span>Actions</span>
-                    </div>
-                    <div id="waiters-list" class="table-body"></div>
+    renderWaiterManagement() {
+        const container = document.getElementById('waiter-management');
+        if (!container) return;
+        
+        container.innerHTML = `
+            <div class="content-header">
+                <h2><i class="fas fa-user-tie"></i> Waiter Management</h2>
+                <div class="breadcrumbs">
+                    <span>Home</span> <i class="fas fa-chevron-right"></i> <span>Waiters</span>
                 </div>
             </div>
-        </div>
-    `;
-    
-    document.getElementById('add-waiter-form')?.addEventListener('submit', (e) => {
-        e.preventDefault();
-        this.addWaiter();
-    });
-    
-    this.renderWaitersList();
-}
 
-renderWaitersList() {
-    const container = document.getElementById('waiters-list');
-    if (!container) return;
-    
-    container.innerHTML = '';
-    
-    if (this.waiters.length === 0) {
-        container.innerHTML = '<div class="empty-state">No waiters added yet</div>';
-        return;
-    }
-    
-    this.waiters.forEach(waiter => {
-        // Calculate waiter statistics
-        const waiterOrders = this.orders.filter(order => order.waiterId === waiter.id);
-        const orderCount = waiterOrders.length;
-        const totalSales = waiterOrders.reduce((sum, order) => sum + order.total, 0);
-        
-        const waiterEl = document.createElement('div');
-        waiterEl.className = 'waiter-item';
-        waiterEl.innerHTML = `
-            <span>${waiter.id}</span>
-            <span>${waiter.name}</span>
-            <span>${waiter.tables || 'Not assigned'}</span>
-            <span>${orderCount}</span>
-            <span>${totalSales.toLocaleString()} TZS</span>
-            <span class="action-buttons">
-                <button class="btn-edit" data-id="${waiter.id}"><i class="fas fa-edit"></i></button>
-                <button class="btn-delete" data-id="${waiter.id}"><i class="fas fa-trash"></i></button>
-            </span>
+            <div class="waiter-controls">
+                <button class="btn btn-primary" id="add-waiter-btn">
+                    <i class="fas fa-user-plus"></i> Add Waiter
+                </button>
+            </div>
+
+            <div class="waiter-table">
+                <div class="table-header">
+                    <span>Name</span>
+                    <span class="desktop-only">Shift</span>
+                    <span class="desktop-only">Tables</span>
+                    <span>Orders</span>
+                    <span>Actions</span>
+                </div>
+                <div id="waiters-list" class="table-body"></div>
+            </div>
         `;
-        container.appendChild(waiterEl);
-    });
-    
-    document.querySelectorAll('.btn-edit').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const waiterId = parseInt(btn.getAttribute('data-id'));
-            this.editWaiter(waiterId);
+        
+        document.getElementById('add-waiter-btn')?.addEventListener('click', () => {
+            this.showAddWaiterForm();
         });
-    });
-    
-    document.querySelectorAll('.btn-delete').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const waiterId = parseInt(btn.getAttribute('data-id'));
-            this.deleteWaiter(waiterId);
+        
+        this.renderWaitersList();
+    }
+
+    showAddWaiterForm() {
+        const container = document.getElementById('waiter-management');
+        container.innerHTML = `
+            <div class="content-header">
+                <h2><i class="fas fa-user-plus"></i> Add Waiter</h2>
+                <div class="breadcrumbs">
+                    <span>Home</span> <i class="fas fa-chevron-right"></i> 
+                    <span>Waiters</span> <i class="fas fa-chevron-right"></i> 
+                    <span>Add</span>
+                </div>
+            </div>
+
+            <form id="add-waiter-form" class="waiter-form">
+                <div class="form-group">
+                    <label for="waiter-name">Waiter Name</label>
+                    <input type="text" id="waiter-name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="waiter-id">Waiter ID (1-27)</label>
+                    <input type="number" id="waiter-id" min="1" max="27" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="waiter-shift">Shift</label>
+                    <select id="waiter-shift" required>
+                        <option value="">Select Shift</option>
+                        <option value="morning">Morning (8AM-2PM)</option>
+                        <option value="afternoon">Afternoon (2PM-8PM)</option>
+                        <option value="night">Night (8PM-2AM)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="waiter-tables">Assign Tables (1-100)</label>
+                    <input type="text" id="waiter-tables" placeholder="e.g., 1,5,7-10">
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline" id="cancel-add-waiter">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Waiter</button>
+                </div>
+            </form>
+        `;
+        
+        document.getElementById('cancel-add-waiter')?.addEventListener('click', () => {
+            this.showContentPage('waiter-management');
         });
-    });
-}
+        
+        document.getElementById('add-waiter-form')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.addWaiter();
+        });
+    }
 
     addWaiter() {
         const name = document.getElementById('waiter-name').value;
@@ -605,10 +659,65 @@ renderWaitersList() {
         }
         
         this.waiters.push({ id, name, shift, tables, color });
-        localStorage.setItem('hoteza_waiters', JSON.stringify(this.waiters));
-        document.getElementById('add-waiter-form').reset();
-        this.renderWaitersList();
+        this.saveData('hoteza_waiters', this.waiters);
         this.showAlert('Waiter added successfully', 'success');
+        this.showContentPage('waiter-management');
+    }
+
+    renderWaitersList() {
+        const container = document.getElementById('waiters-list');
+        if (!container) return;
+        
+        container.innerHTML = '';
+        
+        if (this.waiters.length === 0) {
+            container.innerHTML = '<div class="empty-state">No waiters added yet</div>';
+            return;
+        }
+        
+        this.waiters.forEach(waiter => {
+            const waiterOrders = this.orders.filter(order => order.waiterId === waiter.id);
+            const orderCount = waiterOrders.length;
+            const totalSales = waiterOrders.reduce((sum, order) => sum + order.total, 0);
+            
+            const waiterEl = document.createElement('div');
+            waiterEl.className = 'waiter-item';
+            waiterEl.innerHTML = `
+                <span>${waiter.name}</span>
+                <span class="desktop-only">${this.capitalizeFirstLetter(waiter.shift)}</span>
+                <span class="desktop-only">${waiter.tables || 'Not assigned'}</span>
+                <span>${orderCount}</span>
+                <span class="action-buttons">
+                    <button class="btn-edit" data-id="${waiter.id}">
+                        <i class="fas fa-edit"></i>
+                        <span class="mobile-only">Edit</span>
+                    </button>
+                    <button class="btn-delete" data-id="${waiter.id}">
+                        <i class="fas fa-trash"></i>
+                        <span class="mobile-only">Delete</span>
+                    </button>
+                </span>
+            `;
+            container.appendChild(waiterEl);
+        });
+        
+        this.setupWaiterActionButtons();
+    }
+
+    setupWaiterActionButtons() {
+        document.querySelectorAll('.btn-edit').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const waiterId = parseInt(btn.getAttribute('data-id'));
+                this.editWaiter(waiterId);
+            });
+        });
+        
+        document.querySelectorAll('.btn-delete').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const waiterId = parseInt(btn.getAttribute('data-id'));
+                this.deleteWaiter(waiterId);
+            });
+        });
     }
 
     editWaiter(id) {
@@ -626,39 +735,39 @@ renderWaitersList() {
                 </div>
             </div>
 
-            <form id="edit-waiter-form">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="edit-waiter-name">Waiter Name</label>
-                        <input type="text" id="edit-waiter-name" value="${waiter.name}" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-waiter-id">Waiter ID</label>
-                        <input type="number" id="edit-waiter-id" value="${waiter.id}" readonly>
-                    </div>
+            <form id="edit-waiter-form" class="waiter-form">
+                <div class="form-group">
+                    <label for="edit-waiter-name">Waiter Name</label>
+                    <input type="text" id="edit-waiter-name" value="${waiter.name}" required>
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="edit-waiter-shift">Shift</label>
-                        <select id="edit-waiter-shift" required>
-                            <option value="morning" ${waiter.shift === 'morning' ? 'selected' : ''}>Morning (6AM-6PM)</option>
-                            <option value="evening" ${waiter.shift === 'evening' ? 'selected' : ''}>evening (7PM-12AM)</option>
-                            <option value="night" ${waiter.shift === 'night' ? 'selected' : ''}>Night (12AM-6AM)</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-waiter-tables">Assign Tables (1-100)</label>
-                        <input type="text" id="edit-waiter-tables" value="${waiter.tables}" placeholder="e.g., 1,5,7-10">
-                    </div>
+                
+                <div class="form-group">
+                    <label for="edit-waiter-id">Waiter ID</label>
+                    <input type="number" id="edit-waiter-id" value="${waiter.id}" readonly>
                 </div>
+                
+                <div class="form-group">
+                    <label for="edit-waiter-shift">Shift</label>
+                    <select id="edit-waiter-shift" required>
+                        <option value="morning" ${waiter.shift === 'morning' ? 'selected' : ''}>Morning (8AM-2PM)</option>
+                        <option value="afternoon" ${waiter.shift === 'afternoon' ? 'selected' : ''}>Afternoon (2PM-8PM)</option>
+                        <option value="night" ${waiter.shift === 'night' ? 'selected' : ''}>Night (8PM-2AM)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-waiter-tables">Assign Tables (1-100)</label>
+                    <input type="text" id="edit-waiter-tables" value="${waiter.tables}" placeholder="e.g., 1,5,7-10">
+                </div>
+                
                 <div class="form-actions">
-                    <button type="button" class="btn btn-outline" id="cancel-edit">Cancel</button>
+                    <button type="button" class="btn btn-outline" id="cancel-edit-waiter">Cancel</button>
                     <button type="submit" class="btn btn-primary">Save Changes</button>
                 </div>
             </form>
         `;
         
-        document.getElementById('cancel-edit')?.addEventListener('click', () => {
+        document.getElementById('cancel-edit-waiter')?.addEventListener('click', () => {
             this.showContentPage('waiter-management');
         });
         
@@ -697,7 +806,7 @@ renderWaitersList() {
             color
         };
         
-        localStorage.setItem('hoteza_waiters', JSON.stringify(this.waiters));
+        this.saveData('hoteza_waiters', this.waiters);
         this.showAlert('Waiter updated successfully', 'success');
         this.showContentPage('waiter-management');
     }
@@ -705,7 +814,7 @@ renderWaitersList() {
     deleteWaiter(id) {
         if (confirm('Are you sure you want to delete this waiter?')) {
             this.waiters = this.waiters.filter(waiter => waiter.id !== id);
-            localStorage.setItem('hoteza_waiters', JSON.stringify(this.waiters));
+            this.saveData('hoteza_waiters', this.waiters);
             this.renderWaitersList();
             this.showAlert('Waiter deleted successfully', 'success');
         }
@@ -725,33 +834,20 @@ renderWaitersList() {
             </div>
 
             <div class="order-controls">
-                <div class="filter-section">
-                    <select id="order-filter" class="form-control">
-                        <option value="all">All Orders</option>
-                        <option value="by-waiter">Sort by Waiter</option>
-                        ${this.waiters.map(waiter => 
-                            `<option value="${waiter.id}">Waiter: ${waiter.name}</option>`
-                        ).join('')}
-                    </select>
-                    <button class="btn btn-primary" id="new-order-btn">
-                        <i class="fas fa-plus-circle"></i> Add Order
-                    </button>
-                </div>
+                <button class="btn btn-primary" id="new-order-btn">
+                    <i class="fas fa-plus-circle"></i> Add Order
+                </button>
             </div>
 
             <div class="orders-table">
                 <div class="table-header">
-                    <span>Table</span>
-                    <span>Waiter</span>
-                    <span>Items</span>
+                    <span>Order ID</span>
+                    <span class="desktop-only">Table</span>
                     <span>Total</span>
                     <span>Status</span>
+                    <span>Actions</span>
                 </div>
                 <div class="table-body" id="orders-list"></div>
-                <div class="table-footer">
-                    <span class="grand-total-label">Grand Total:</span>
-                    <span id="grand-total">0 TZS</span>
-                </div>
             </div>
         `;
         
@@ -759,11 +855,7 @@ renderWaitersList() {
             this.showNewOrderForm();
         });
         
-        document.getElementById('order-filter')?.addEventListener('change', (e) => {
-            this.filterOrders(e.target.value);
-        });
-        
-        this.filterOrders('all');
+        this.renderOrdersList();
     }
 
     showNewOrderForm() {
@@ -787,20 +879,19 @@ renderWaitersList() {
             </div>
 
             <form id="add-order-form" class="order-form">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="order-waiter">Waiter</label>
-                        <select id="order-waiter" required>
-                            <option value="">Select Waiter</option>
-                            ${this.waiters.map(waiter => 
-                                `<option value="${waiter.id}">${waiter.name}</option>`
-                            ).join('')}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="order-table">Table Number</label>
-                        <input type="number" id="order-table" min="1" max="100" required>
-                    </div>
+                <div class="form-group">
+                    <label for="order-waiter">Waiter</label>
+                    <select id="order-waiter" required>
+                        <option value="">Select Waiter</option>
+                        ${this.waiters.map(waiter => 
+                            `<option value="${waiter.id}">${waiter.name}</option>`
+                        ).join('')}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="order-table">Table Number</label>
+                    <input type="number" id="order-table" min="1" max="100" required>
                 </div>
 
                 <div class="order-items" id="order-items">
@@ -813,17 +904,15 @@ renderWaitersList() {
                     <div id="items-list"></div>
                 </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Payment Method</label>
-                        <div class="payment-options">
-                            ${this.paymentMethods.map(method => `
-                                <label class="payment-option">
-                                    <input type="radio" name="payment" value="${method.id}" ${method.id === 'cash' ? 'checked' : ''}>
-                                    <i class="fas ${method.icon}"></i> ${method.name}
-                                </label>
-                            `).join('')}
-                        </div>
+                <div class="form-group">
+                    <label>Payment Method</label>
+                    <div class="payment-options">
+                        ${this.paymentMethods.map(method => `
+                            <label class="payment-option">
+                                <input type="radio" name="payment" value="${method.id}" ${method.id === 'cash' ? 'checked' : ''}>
+                                <i class="fas ${method.icon}"></i> ${method.name}
+                            </label>
+                        `).join('')}
                     </div>
                 </div>
 
@@ -979,25 +1068,11 @@ renderWaitersList() {
         this.orders.push(newOrder);
         this.subscription.ordersToday++;
         
-        localStorage.setItem('hoteza_orders', JSON.stringify(this.orders));
-        localStorage.setItem('hoteza_subscription', JSON.stringify(this.subscription));
+        this.saveData('hoteza_orders', this.orders);
+        this.saveData('hoteza_subscription', this.subscription);
         
         this.showAlert('Order added successfully', 'success');
         this.showContentPage('order-management');
-        this.filterOrders('all');
-    }
-
-    filterOrders(filterValue) {
-        let filteredOrders = [...this.orders];
-        
-        if (filterValue === 'by-waiter') {
-            filteredOrders.sort((a, b) => a.waiter.localeCompare(b.waiter));
-        } else if (filterValue !== 'all') {
-            const waiterId = parseInt(filterValue);
-            filteredOrders = filteredOrders.filter(order => order.waiterId === waiterId);
-        }
-        
-        this.renderOrdersList(filteredOrders);
     }
 
     renderOrdersList(orders = this.orders) {
@@ -1008,38 +1083,40 @@ renderWaitersList() {
         
         if (orders.length === 0) {
             container.innerHTML = '<div class="empty-state">No orders found</div>';
-            document.getElementById('grand-total').textContent = '0 TZS';
             return;
         }
-        
-        let grandTotal = 0;
         
         orders.forEach(order => {
             const orderEl = document.createElement('div');
             orderEl.className = 'order-item';
             
-            const itemsList = order.items.map(item => item.name).join(', ');
-            grandTotal += order.total;
-            
             orderEl.innerHTML = `
-                <span>${order.table}</span>
-                <span>${order.waiter}</span>
-                <span class="order-items">${itemsList}</span>
+                <span>${order.id}</span>
+                <span class="desktop-only">${order.table}</span>
                 <span>${order.total.toLocaleString()} TZS</span>
                 <span class="status-badge ${order.status}">${this.capitalizeFirstLetter(order.status)}</span>
                 <span class="action-buttons">
-                    <button class="btn-mark-paid" data-id="${order.id}">Mark Paid</button>
-                    <button class="btn-edit" data-id="${order.id}" title="Edit">
-                        <i class="fas fa-edit"></i>
+                    <button class="btn-mark-paid" data-id="${order.id}">
+                        <i class="fas fa-check-circle"></i>
+                        <span class="mobile-only">Paid</span>
                     </button>
-                    <button class="btn-delete" data-id="${order.id}" title="Delete">
+                    <button class="btn-edit" data-id="${order.id}">
+                        <i class="fas fa-edit"></i>
+                        <span class="mobile-only">Edit</span>
+                    </button>
+                    <button class="btn-delete" data-id="${order.id}">
                         <i class="fas fa-trash"></i>
+                        <span class="mobile-only">Delete</span>
                     </button>
                 </span>
             `;
             container.appendChild(orderEl);
         });
 
+        this.setupOrderActionButtons();
+    }
+
+    setupOrderActionButtons() {
         document.querySelectorAll('.btn-mark-paid').forEach(button => {
             button.addEventListener('click', () => {
                 const orderId = button.getAttribute('data-id');
@@ -1047,8 +1124,8 @@ renderWaitersList() {
                 
                 if (order) {
                     order.status = 'completed';
-                    localStorage.setItem('hoteza_orders', JSON.stringify(this.orders));
-                    this.renderOrdersList(orders);
+                    this.saveData('hoteza_orders', this.orders);
+                    this.renderOrdersList();
                 }
             });
         });
@@ -1066,8 +1143,6 @@ renderWaitersList() {
                 this.deleteOrder(orderId);
             });
         });
-        
-        document.getElementById('grand-total').textContent = `${grandTotal.toLocaleString()} TZS`;
     }
 
     editOrder(id) {
@@ -1086,19 +1161,18 @@ renderWaitersList() {
             </div>
 
             <form id="edit-order-form" class="order-form">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="edit-order-waiter">Waiter</label>
-                        <select id="edit-order-waiter" required>
-                            ${this.waiters.map(waiter => 
-                                `<option value="${waiter.id}" ${order.waiterId === waiter.id ? 'selected' : ''}>${waiter.name}</option>`
-                            ).join('')}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-order-table">Table Number</label>
-                        <input type="number" id="edit-order-table" min="1" max="100" value="${order.table}" required>
-                    </div>
+                <div class="form-group">
+                    <label for="edit-order-waiter">Waiter</label>
+                    <select id="edit-order-waiter" required>
+                        ${this.waiters.map(waiter => 
+                            `<option value="${waiter.id}" ${order.waiterId === waiter.id ? 'selected' : ''}>${waiter.name}</option>`
+                        ).join('')}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-order-table">Table Number</label>
+                    <input type="number" id="edit-order-table" min="1" max="100" value="${order.table}" required>
                 </div>
 
                 <div class="order-items" id="order-items">
@@ -1111,17 +1185,15 @@ renderWaitersList() {
                     <div id="items-list"></div>
                 </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Payment Method</label>
-                        <div class="payment-options">
-                            ${this.paymentMethods.map(method => `
-                                <label class="payment-option">
-                                    <input type="radio" name="edit-payment" value="${method.id}" ${order.paymentMethod === method.id ? 'checked' : ''}>
-                                    <i class="fas ${method.icon}"></i> ${method.name}
-                                </label>
-                            `).join('')}
-                        </div>
+                <div class="form-group">
+                    <label>Payment Method</label>
+                    <div class="payment-options">
+                        ${this.paymentMethods.map(method => `
+                            <label class="payment-option">
+                                <input type="radio" name="edit-payment" value="${method.id}" ${order.paymentMethod === method.id ? 'checked' : ''}>
+                                <i class="fas ${method.icon}"></i> ${method.name}
+                            </label>
+                        `).join('')}
                     </div>
                 </div>
 
@@ -1284,7 +1356,7 @@ renderWaitersList() {
             paymentMethod: paymentMethod
         };
         
-        localStorage.setItem('hoteza_orders', JSON.stringify(this.orders));
+        this.saveData('hoteza_orders', this.orders);
         this.showAlert('Order updated successfully', 'success');
         this.showContentPage('order-management');
     }
@@ -1292,7 +1364,7 @@ renderWaitersList() {
     deleteOrder(id) {
         if (confirm('Are you sure you want to delete this order?')) {
             this.orders = this.orders.filter(order => order.id !== id);
-            localStorage.setItem('hoteza_orders', JSON.stringify(this.orders));
+            this.saveData('hoteza_orders', this.orders);
             this.renderOrdersList();
             this.showAlert('Order deleted successfully', 'success');
         }
@@ -1404,7 +1476,7 @@ renderWaitersList() {
         };
         
         this.menuItems.push(newItem);
-        localStorage.setItem('hoteza_menuItems', JSON.stringify(this.menuItems));
+        this.saveData('hoteza_menuItems', this.menuItems);
         this.showAlert('Menu item added successfully', 'success');
         this.showContentPage('food-service');
     }
@@ -1554,7 +1626,7 @@ renderWaitersList() {
             category
         };
         
-        localStorage.setItem('hoteza_menuItems', JSON.stringify(this.menuItems));
+        this.saveData('hoteza_menuItems', this.menuItems);
         this.showAlert('Menu item updated successfully', 'success');
         this.showContentPage('food-service');
     }
@@ -1562,218 +1634,148 @@ renderWaitersList() {
     deleteMenuItem(id) {
         if (confirm('Are you sure you want to delete this menu item?')) {
             this.menuItems = this.menuItems.filter(item => item.id !== id);
-            localStorage.setItem('hoteza_menuItems', JSON.stringify(this.menuItems));
+            this.saveData('hoteza_menuItems', this.menuItems);
             this.renderMenuItems();
             this.showAlert('Menu item deleted successfully', 'success');
         }
     }
 
     // ==================== EXPENSES MANAGEMENT ====================
-renderExpensesPage() {
-    const container = document.getElementById('expenses');
-    if (!container) return;
-    
-    container.innerHTML = `
-        <div class="content-header">
-            <h2><i class="fas fa-wallet"></i> Expense Tracker</h2>
-            <div class="breadcrumbs">
-                <span>Home</span> <i class="fas fa-chevron-right"></i> <span>Expenses</span>
-            </div>
-        </div>
-
-        <div class="expense-content">
-            <form id="expense-form" class="compact-form">
-                <div class="form-row compact-row">
-                    <div class="form-group">
-                        <label for="expense-name">Expense Name</label>
-                        <input type="text" id="expense-name" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="expense-amount">Amount (TZS)</label>
-                        <input type="number" id="expense-amount" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="expense-date">Date</label>
-                        <input type="date" id="expense-date" value="${new Date().toISOString().split('T')[0]}" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Add Expense</button>
+    renderExpensesPage() {
+        const container = document.getElementById('expenses');
+        if (!container) return;
+        
+        container.innerHTML = `
+            <div class="content-header">
+                <h2><i class="fas fa-wallet"></i> Expense Tracker</h2>
+                <div class="breadcrumbs">
+                    <span>Home</span> <i class="fas fa-chevron-right"></i> <span>Expenses</span>
                 </div>
-            </form>
+            </div>
 
-            <div class="expenses-table-container">
-                <div class="expenses-table">
-                    <div class="table-header">
-                        <span class="col-date">Date</span>
-                        <span class="col-name">Expense Name</span>
-                        <span class="col-amount">Amount (TZS)</span>
-                        <span class="col-actions">Actions</span>
+            <div class="expense-content">
+                <form id="expense-form" class="compact-form">
+                    <div class="form-row compact-row">
+                        <div class="form-group">
+                            <label for="expense-name">Expense Name</label>
+                            <input type="text" id="expense-name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="expense-amount">Amount (TZS)</label>
+                            <input type="number" id="expense-amount" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Expense</button>
                     </div>
-                    <div class="table-body" id="expenses-list"></div>
-                    <div class="table-footer">
-                        <span class="total-label">Total Expenses:</span>
-                        <span id="total-expenses">0 TZS</span>
+                </form>
+
+                <div class="expenses-table-container">
+                    <div class="expenses-table">
+                        <div class="table-header">
+                            <span class="col-date">Date</span>
+                            <span class="col-name">Expense</span>
+                            <span class="col-amount">Amount</span>
+                            <span class="col-actions">Actions</span>
+                        </div>
+                        <div class="table-body" id="expenses-list"></div>
+                        <div class="table-footer">
+                            <span class="total-label">Total:</span>
+                            <span id="total-expenses">0 TZS</span>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    `;
+        `;
 
-    document.getElementById('expense-form')?.addEventListener('submit', (e) => {
-        e.preventDefault();
-        this.addExpense();
-    });
+        document.getElementById('expense-form')?.addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.addExpense();
+        });
 
-    this.renderExpensesList();
-}
+        this.renderExpensesList();
+    }
 
     addExpense() {
         const name = document.getElementById('expense-name').value;
         const amount = parseFloat(document.getElementById('expense-amount').value);
-        const date = document.getElementById('expense-date').value;
-
-        if (!name || isNaN(amount) || !date) {
+        
+        if (!name || isNaN(amount)) {
             this.showAlert('Please fill in all fields', 'error');
             return;
         }
 
-        const expense = { name, amount, date };
+        const expense = { 
+            name, 
+            amount, 
+            date: new Date().toISOString().split('T')[0] 
+        };
+        
         this.expenses.push(expense);
-        localStorage.setItem('hoteza_expenses', JSON.stringify(this.expenses));
+        this.saveData('hoteza_expenses', this.expenses);
         this.renderExpensesList();
         document.getElementById('expense-form').reset();
         this.showAlert('Expense added successfully', 'success');
     }
 
     renderExpensesList() {
-    const container = document.getElementById('expenses-list');
-    const totalElement = document.getElementById('total-expenses');
-    if (!container || !totalElement) return;
+        const container = document.getElementById('expenses-list');
+        const totalElement = document.getElementById('total-expenses');
+        if (!container || !totalElement) return;
 
-    container.innerHTML = '';
-    
-    if (this.expenses.length === 0) {
-        container.innerHTML = '<div class="empty-state">No expenses recorded yet</div>';
-        totalElement.textContent = '0 TZS';
-        return;
-    }
-
-    // Sort expenses by date (newest first)
-    const sortedExpenses = [...this.expenses].sort((a, b) => 
-        new Date(b.date) - new Date(a.date)
-    );
-
-    let total = 0;
-    
-    sortedExpenses.forEach((expense, index) => {
-        total += expense.amount;
+        container.innerHTML = '';
         
-        const expenseEl = document.createElement('div');
-        expenseEl.className = 'expense-item';
-        expenseEl.innerHTML = `
-            <span>${expense.date}</span>
-            <span>${expense.name}</span>
-            <span>${expense.amount.toLocaleString()} TZS</span>
-            <span class="action-buttons">
-                <button class="btn-edit" data-index="${index}">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button class="btn-delete" data-index="${index}">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </span>
-        `;
-        container.appendChild(expenseEl);
-    });
+        if (this.expenses.length === 0) {
+            container.innerHTML = '<div class="empty-state">No expenses recorded yet</div>';
+            totalElement.textContent = '0 TZS';
+            return;
+        }
 
-    // Update total
-    totalElement.textContent = `${total.toLocaleString()} TZS`;
+        // Sort expenses by date (newest first)
+        const sortedExpenses = [...this.expenses].sort((a, b) => 
+            new Date(b.date) - new Date(a.date)
+        );
 
-    // Add event listeners for edit and delete buttons
-    document.querySelectorAll('.btn-edit').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const index = parseInt(btn.getAttribute('data-index'));
-            this.editExpense(index);
+        let total = 0;
+        
+        sortedExpenses.forEach((expense, index) => {
+            total += expense.amount;
+            
+            const expenseEl = document.createElement('div');
+            expenseEl.className = 'expense-item';
+            expenseEl.innerHTML = `
+                <span>${expense.date}</span>
+                <span>${expense.name}</span>
+                <span>${expense.amount.toLocaleString()} TZS</span>
+                <span class="action-buttons">
+                    <button class="btn-delete" data-index="${index}">
+                        <i class="fas fa-trash"></i>
+                        <span class="mobile-only">Delete</span>
+                    </button>
+                </span>
+            `;
+            container.appendChild(expenseEl);
         });
-    });
 
-    document.querySelectorAll('.btn-delete').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const index = parseInt(btn.getAttribute('data-index'));
-            this.deleteExpense(index);
+        // Update total
+        totalElement.textContent = `${total.toLocaleString()} TZS`;
+
+        // Add event listeners for delete buttons
+        document.querySelectorAll('.btn-delete').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const index = parseInt(btn.getAttribute('data-index'));
+                this.deleteExpense(index);
+            });
         });
-    });
-}
-    editExpense(index) {
-    const expense = this.expenses[index];
-    if (!expense) return;
-
-    const container = document.getElementById('expenses');
-    container.innerHTML = `
-        <div class="content-header">
-            <h2><i class="fas fa-edit"></i> Edit Expense</h2>
-            <div class="breadcrumbs">
-                <span>Home</span> <i class="fas fa-chevron-right"></i> 
-                <span>Expenses</span> <i class="fas fa-chevron-right"></i> 
-                <span>Edit</span>
-            </div>
-        </div>
-
-        <form id="edit-expense-form" class="expense-form">
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="edit-expense-name">Expense Name</label>
-                    <input type="text" id="edit-expense-name" value="${expense.name}" required>
-                </div>
-                <div class="form-group">
-                    <label for="edit-expense-amount">Amount (TZS)</label>
-                    <input type="number" id="edit-expense-amount" value="${expense.amount}" required>
-                </div>
-                <div class="form-group">
-                    <label for="edit-expense-date">Date</label>
-                    <input type="date" id="edit-expense-date" value="${expense.date}" required>
-                </div>
-            </div>
-            <div class="form-actions">
-                <button type="button" class="btn btn-outline" id="cancel-edit-expense">Cancel</button>
-                <button type="submit" class="btn btn-primary">Save Changes</button>
-            </div>
-        </form>
-    `;
-
-    document.getElementById('cancel-edit-expense')?.addEventListener('click', () => {
-        this.showContentPage('expenses');
-    });
-
-    document.getElementById('edit-expense-form')?.addEventListener('submit', (e) => {
-        e.preventDefault();
-        this.saveExpenseChanges(index);
-    });
-}
-
-saveExpenseChanges(index) {
-    const name = document.getElementById('edit-expense-name').value;
-    const amount = parseFloat(document.getElementById('edit-expense-amount').value);
-    const date = document.getElementById('edit-expense-date').value;
-
-    if (!name || isNaN(amount) || !date) {
-        this.showAlert('Please fill in all fields', 'error');
-        return;
     }
 
-    this.expenses[index] = { name, amount, date };
-    localStorage.setItem('hoteza_expenses', JSON.stringify(this.expenses));
-    this.showAlert('Expense updated successfully', 'success');
-    this.showContentPage('expenses');
-}
-
-deleteExpense(index) {
-    if (confirm('Are you sure you want to delete this expense?')) {
-        this.expenses.splice(index, 1);
-        localStorage.setItem('hoteza_expenses', JSON.stringify(this.expenses));
-        this.renderExpensesList();
-        this.showAlert('Expense deleted successfully', 'success');
+    deleteExpense(index) {
+        if (confirm('Are you sure you want to delete this expense?')) {
+            this.expenses.splice(index, 1);
+            this.saveData('hoteza_expenses', this.expenses);
+            this.renderExpensesList();
+            this.showAlert('Expense deleted successfully', 'success');
+        }
     }
-}
+
     // ==================== REPORTS ====================
     renderReports() {
         const container = document.getElementById('reports');
@@ -1804,9 +1806,6 @@ deleteExpense(index) {
                     <button class="btn btn-primary" id="generate-report">
                         <i class="fas fa-chart-line"></i> Generate
                     </button>
-                    <button class="btn btn-outline" id="download-pdf">
-                        <i class="fas fa-file-pdf"></i> Download PDF Report
-                    </button>
                 </div>
             </div>
 
@@ -1820,222 +1819,104 @@ deleteExpense(index) {
             this.generateReport();
         });
 
-        document.getElementById('download-pdf')?.addEventListener('click', () => {
-            this.downloadPDFReport();
-        });
-
         document.getElementById('report-date').valueAsDate = new Date();
         this.generateReport();
     }
 
     generateReport() {
-    // Destroy previous chart if exists
-    if (this.salesChart) {
-        this.salesChart.destroy();
-    }
-    
-    const ctx = document.getElementById('sales-chart').getContext('2d');
-    const reportType = document.getElementById('report-type').value;
-    const reportDate = document.getElementById('report-date').value;
-    const today = new Date(reportDate).toISOString().split('T')[0];
-    
-    // Calculate actual values from data
-    const todayOrders = this.orders.filter(order => 
-        new Date(order.date).toISOString().split('T')[0] === today
-    );
-    const todayRevenue = todayOrders.reduce((sum, order) => sum + order.total, 0);
-    const todayExpenses = this.expenses.filter(exp => exp.date === today)
-        .reduce((sum, exp) => sum + exp.amount, 0);
-    const todayProfit = todayRevenue - todayExpenses;
-    
-    // Calculate averages (sample data for demonstration)
-    const avgDailySales = todayRevenue; // In a real app, you'd calculate this over time
-    const highestDay = todayRevenue;    // In a real app, you'd find the max value
-    
-    // Update the report summary in the app
-    document.getElementById('report-summary').innerHTML = `
-        <div class="summary-card">
-            <h4>Report Summary - ${new Date(reportDate).toLocaleDateString()}</h4>
-            <div class="summary-item">
-                <span>Total Orders:</span>
-                <span>${todayOrders.length}</span>
+        // Destroy previous chart if exists
+        if (this.salesChart) {
+            this.salesChart.destroy();
+        }
+        
+        const ctx = document.getElementById('sales-chart').getContext('2d');
+        const reportType = document.getElementById('report-type').value;
+        const reportDate = document.getElementById('report-date').value;
+        const today = new Date(reportDate).toISOString().split('T')[0];
+        
+        // Calculate actual values from data
+        const todayOrders = this.orders.filter(order => 
+            new Date(order.date).toISOString().split('T')[0] === today
+        );
+        const todayRevenue = todayOrders.reduce((sum, order) => sum + order.total, 0);
+        const todayExpenses = this.expenses.filter(exp => exp.date === today)
+            .reduce((sum, exp) => sum + exp.amount, 0);
+        const todayProfit = todayRevenue - todayExpenses;
+        
+        // Update the report summary in the app
+        document.getElementById('report-summary').innerHTML = `
+            <div class="summary-card">
+                <h4>Report Summary - ${new Date(reportDate).toLocaleDateString()}</h4>
+                <div class="summary-item">
+                    <span>Total Orders:</span>
+                    <span>${todayOrders.length}</span>
+                </div>
+                <div class="summary-item">
+                    <span>Total Sales:</span>
+                    <span>${todayRevenue.toLocaleString()} TZS</span>
+                </div>
+                <div class="summary-item">
+                    <span>Total Expenses:</span>
+                    <span>${todayExpenses.toLocaleString()} TZS</span>
+                </div>
+                <div class="summary-item">
+                    <span>Profit:</span>
+                    <span>${todayProfit.toLocaleString()} TZS</span>
+                </div>
             </div>
-            <div class="summary-item">
-                <span>Total Sales:</span>
-                <span>${todayRevenue.toLocaleString()} TZS</span>
-            </div>
-            <div class="summary-item">
-                <span>Total Expenses:</span>
-                <span>${todayExpenses.toLocaleString()} TZS</span>
-            </div>
-            <div class="summary-item">
-                <span>Profit:</span>
-                <span>${todayProfit.toLocaleString()} TZS</span>
-            </div>
-            <div class="summary-item">
-                <span>Average Order Value:</span>
-                <span>${todayOrders.length > 0 ? (todayRevenue/todayOrders.length).toLocaleString() : 0} TZS</span>
-            </div>
-        </div>
-    `;
-    
-    // Chart data (sample - you should replace with real calculations)
-    let labels, data;
-    if (reportType === 'daily') {
-        labels = ['8AM', '10AM', '12PM', '2PM', '4PM', '6PM', '8PM'];
-        data = [12000, 35000, 42000, 38000, 45000, 28000, 15000];
-    } else if (reportType === 'weekly') {
-        labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-        data = [120000, 95000, 135000, 110000, 150000, 180000, 200000];
-    } else { // monthly
-        labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
-        data = [450000, 520000, 480000, 550000];
-    }
-    
-    this.salesChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Sales (TZS)',
-                data: data,
-                backgroundColor: 'rgba(67, 97, 238, 0.7)',
-                borderColor: 'rgba(67, 97, 238, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            responsive: true,
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return value.toLocaleString() + ' TZS';
+        `;
+        
+        // Chart data (sample - you should replace with real calculations)
+        let labels, data;
+        if (reportType === 'daily') {
+            labels = ['8AM', '10AM', '12PM', '2PM', '4PM', '6PM', '8PM'];
+            data = [12000, 35000, 42000, 38000, 45000, 28000, 15000];
+        } else if (reportType === 'weekly') {
+            labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            data = [120000, 95000, 135000, 110000, 150000, 180000, 200000];
+        } else { // monthly
+            labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+            data = [450000, 520000, 480000, 550000];
+        }
+        
+        this.salesChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Sales (TZS)',
+                    data: data,
+                    backgroundColor: 'rgba(67, 97, 238, 0.7)',
+                    borderColor: 'rgba(67, 97, 238, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return value.toLocaleString() + ' TZS';
+                            }
                         }
                     }
-                }
-            },
-            plugins: {
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return context.parsed.y.toLocaleString() + ' TZS';
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.parsed.y.toLocaleString() + ' TZS';
+                            }
                         }
                     }
                 }
             }
-        }
-    });
-}
-
-    async downloadPDFReport() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    
-    // Set default font
-    doc.setFont('helvetica');
-    doc.setFontSize(12);
-
-    // Add Title with proper spacing
-    doc.setFontSize(16);
-    doc.setTextColor(40, 53, 147); // Dark blue color
-    doc.text("HOTEZA MANAGEMENT REPORT", 105, 20, { align: 'center' });
-    
-    // Add date
-    doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 105, 30, { align: 'center' });
-    
-    // Add line separator
-    doc.setDrawColor(200);
-    doc.line(20, 35, 190, 35);
-
-    // Reset text color
-    doc.setTextColor(0, 0, 0);
-
-    // Add Summary section with proper formatting
-    doc.setFontSize(14);
-    doc.text("Summary", 20, 45);
-    
-    const today = new Date().toISOString().split('T')[0];
-    const todayOrders = this.orders.filter(o => o.date.includes(today));
-    const todayRevenue = todayOrders.reduce((sum, o) => sum + o.total, 0);
-    const todayExpenses = this.expenses.filter(e => e.date === today)
-        .reduce((sum, e) => sum + e.amount, 0);
-    
-    doc.setFontSize(10);
-    doc.text(`Today's Orders: ${todayOrders.length}`, 20, 55);
-    doc.text(`Today's Revenue: ${todayRevenue.toLocaleString()} TZS`, 20, 60);
-    doc.text(`Today's Expenses: ${todayExpenses.toLocaleString()} TZS`, 20, 65);
-    doc.text(`Today's Profit: ${(todayRevenue - todayExpenses).toLocaleString()} TZS`, 20, 70);
-
-    // Add Orders section
-    doc.addPage();
-    doc.setFontSize(14);
-    doc.text("Recent Orders", 20, 20);
-    
-    let y = 30;
-    doc.setFontSize(10);
-    doc.text("ID", 20, y);
-    doc.text("Waiter", 50, y);
-    doc.text("Items", 90, y);
-    doc.text("Total", 150, y);
-    doc.text("Status", 180, y);
-    y += 5;
-    
-    this.orders.slice(0, 15).forEach(order => {
-        if (y > 270) {
-            doc.addPage();
-            y = 20;
-        }
-        
-        doc.text(order.id, 20, y);
-        doc.text(order.waiter, 50, y);
-        doc.text(order.items.map(i => i.name).join(', '), 90, y, { maxWidth: 50 });
-        doc.text(order.total.toLocaleString() + ' TZS', 150, y);
-        doc.text(this.capitalizeFirstLetter(order.status), 180, y);
-        y += 10;
-    });
-
-    // Add Expenses section
-    doc.addPage();
-    doc.setFontSize(14);
-    doc.text("Expenses", 20, 20);
-    
-    y = 30;
-    doc.setFontSize(10);
-    doc.text("Date", 20, y);
-    doc.text("Description", 50, y);
-    doc.text("Amount", 150, y);
-    y += 5;
-    
-    this.expenses.slice(0, 20).forEach(exp => {
-        if (y > 270) {
-            doc.addPage();
-            y = 20;
-        }
-        
-        doc.text(exp.date, 20, y);
-        doc.text(exp.name, 50, y, { maxWidth: 80 });
-        doc.text(exp.amount.toLocaleString() + ' TZS', 150, y);
-        y += 10;
-    });
-
-    // Add footer
-    const pageCount = doc.internal.getNumberOfPages();
-    for(let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(8);
-        doc.setTextColor(100);
-        doc.text(`Page ${i} of ${pageCount}`, 105, 287, { align: 'center' });
-        doc.text("HOTEZA Management System", 105, 292, { align: 'center' });
+        });
     }
 
-    doc.save("hoteza_report.pdf");
-}
-
-    // ==================== SUBSCRIPTION MANAGEMENT ====================
+    // ==================== SUBSCRIPTION ====================
     renderSubscription() {
         const container = document.getElementById('subscription');
         if (!container) return;
@@ -2070,10 +1951,6 @@ deleteExpense(index) {
                     <div class="detail-item">
                         <span class="detail-label">Orders Today:</span>
                         <span class="detail-value">${this.subscription.ordersToday} / ${this.subscription.dailyLimit}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Auto-Renew:</span>
-                        <span class="detail-value">${this.subscription.autoRenew ? 'Enabled' : 'Disabled'}</span>
                     </div>
                 </div>
             </div>
@@ -2128,35 +2005,6 @@ deleteExpense(index) {
                 </div>
             </div>
             
-            <div class="voucher-section">
-                <h3>Vouchers</h3>
-                <div class="voucher-cards">
-                    <div class="voucher-card">
-                        <h4>250 Orders</h4>
-                        <div class="voucher-price">5,000 TZS</div>
-                        <button class="btn btn-primary" id="buy-voucher-250">
-                            <i class="fas fa-shopping-cart"></i> Buy Now
-                        </button>
-                    </div>
-                    <div class="voucher-card">
-                        <h4>500 Orders</h4>
-                        <div class="voucher-price">10,000 TZS</div>
-                        <button class="btn btn-primary" id="buy-voucher-500">
-                            <i class="fas fa-shopping-cart"></i> Buy Now
-                        </button>
-                    </div>
-                    <div class="voucher-card">
-                        <h4>Custom</h4>
-                        <div class="voucher-custom">
-                            <input type="number" id="custom-voucher-amount" placeholder="Amount (TZS)" min="1000" step="1000">
-                            <button class="btn btn-primary" id="buy-custom-voucher">
-                                <i class="fas fa-shopping-cart"></i> Buy
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
             <div class="wallet-section">
                 <h3>Wallet</h3>
                 <div class="wallet-balance">
@@ -2194,25 +2042,6 @@ deleteExpense(index) {
             }
         });
         
-        // Voucher Buttons
-        document.getElementById('buy-voucher-250')?.addEventListener('click', () => {
-            this.purchaseVoucher(250, 5000);
-        });
-        
-        document.getElementById('buy-voucher-500')?.addEventListener('click', () => {
-            this.purchaseVoucher(500, 10000);
-        });
-        
-        document.getElementById('buy-custom-voucher')?.addEventListener('click', () => {
-            const amount = parseFloat(document.getElementById('custom-voucher-amount').value);
-            if (isNaN(amount) || amount < 1000) {
-                this.showAlert('Please enter a valid amount (minimum 1000 TZS)', 'error');
-                return;
-            }
-            const orders = Math.floor(amount / 20); // 20 TZS per order
-            this.purchaseVoucher(orders, amount);
-        });
-        
         // Wallet Top Up
         document.getElementById('top-up-wallet')?.addEventListener('click', () => {
             this.showTopUpForm();
@@ -2233,25 +2062,8 @@ deleteExpense(index) {
                 autoRenew: this.subscription.autoRenew
             };
             
-            localStorage.setItem('hoteza_subscription', JSON.stringify(this.subscription));
+            this.saveData('hoteza_subscription', this.subscription);
             this.showAlert(`Successfully upgraded to ${planName} plan!`, 'success');
-            this.renderSubscription();
-        }
-    }
-
-    purchaseVoucher(orders, price) {
-        if (confirm(`Purchase ${orders} orders for ${price.toLocaleString()} TZS?`)) {
-            const voucher = {
-                id: 'VOU-' + Math.floor(Math.random() * 1000000),
-                date: new Date().toISOString(),
-                orders: orders,
-                price: price,
-                remaining: orders
-            };
-            
-            this.vouchers.push(voucher);
-            localStorage.setItem('hoteza_vouchers', JSON.stringify(this.vouchers));
-            this.showAlert(`Voucher purchased successfully! You now have ${orders} additional orders available.`, 'success');
             this.renderSubscription();
         }
     }
@@ -2306,7 +2118,7 @@ deleteExpense(index) {
         
         // In a real app, this would process payment
         this.walletBalance += amount;
-        localStorage.setItem('hoteza_walletBalance', this.walletBalance.toString());
+        this.saveData('hoteza_walletBalance', this.walletBalance);
         
         this.showAlert(`Wallet topped up successfully with ${amount.toLocaleString()} TZS`, 'success');
         this.renderSubscription();
@@ -2330,10 +2142,6 @@ deleteExpense(index) {
                         <label for="contact-phone">Phone Number</label>
                         <input type="tel" id="contact-phone" required>
                     </div>
-                    <div class="form-group">
-                        <label for="contact-message">Message</label>
-                        <textarea id="contact-message" rows="3"></textarea>
-                    </div>
                     <div class="form-actions">
                         <button type="button" class="btn btn-outline" id="cancel-contact">Cancel</button>
                         <button type="submit" class="btn btn-primary">Send Request</button>
@@ -2356,7 +2164,6 @@ deleteExpense(index) {
         const name = document.getElementById('contact-name').value;
         const email = document.getElementById('contact-email').value;
         const phone = document.getElementById('contact-phone').value;
-        const message = document.getElementById('contact-message').value;
         
         if (!name || !email || !phone) {
             this.showAlert('Please fill in all required fields', 'error');
@@ -2367,7 +2174,7 @@ deleteExpense(index) {
         this.renderSubscription();
     }
 
-        // ==================== ACCOUNT MANAGEMENT ====================
+    // ==================== ACCOUNT MANAGEMENT ====================
     renderAccountPage() {
         const container = document.getElementById('account-page');
         if (!container) return;
@@ -2461,7 +2268,7 @@ deleteExpense(index) {
             location
         };
         
-        localStorage.setItem('hoteza_user', JSON.stringify(this.currentUser));
+        this.saveData('hoteza_user', this.currentUser);
         this.updateUI();
         this.showAlert('Account details updated successfully', 'success');
     }
@@ -2472,9 +2279,6 @@ deleteExpense(index) {
             <div class="photo-upload-options">
                 <h4>Change Profile Photo</h4>
                 <div class="upload-buttons">
-                    <button class="btn btn-primary" id="take-photo">
-                        <i class="fas fa-camera"></i> Take Photo
-                    </button>
                     <button class="btn btn-primary" id="choose-photo">
                         <i class="fas fa-folder-open"></i> Choose from Files
                     </button>
@@ -2484,10 +2288,6 @@ deleteExpense(index) {
                 </div>
             </div>
         `;
-        
-        document.getElementById('take-photo')?.addEventListener('click', () => {
-            this.showAlert('Camera functionality would be implemented here', 'info');
-        });
         
         document.getElementById('choose-photo')?.addEventListener('click', () => {
             const input = document.createElement('input');
@@ -2499,7 +2299,7 @@ deleteExpense(index) {
                     const reader = new FileReader();
                     reader.onload = (event) => {
                         this.currentUser.profileImage = event.target.result;
-                        localStorage.setItem('hoteza_user', JSON.stringify(this.currentUser));
+                        this.saveData('hoteza_user', this.currentUser);
                         this.updateUI();
                         this.showAlert('Profile photo updated successfully', 'success');
                         this.renderAccountPage();
@@ -2595,16 +2395,6 @@ deleteExpense(index) {
                         <p>Navigate to Subscription page and click on your desired plan. Confirm the upgrade when prompted.</p>
                     </div>
                 </div>
-                
-                <div class="faq-item">
-                    <div class="faq-question">
-                        <span>How do I reset my password?</span>
-                        <i class="fas fa-chevron-down"></i>
-                    </div>
-                    <div class="faq-answer">
-                        <p>Currently, you need to contact support to reset your password. We'll add self-service password reset soon.</p>
-                    </div>
-                </div>
             </div>
         `;
         
@@ -2636,11 +2426,6 @@ deleteExpense(index) {
                     <textarea id="support-message" rows="5" required></textarea>
                 </div>
                 
-                <div class="form-group">
-                    <label for="support-email">Your Email</label>
-                    <input type="email" id="support-email" required>
-                </div>
-                
                 <button type="submit" class="btn btn-primary btn-block">
                     <i class="fas fa-paper-plane"></i> Send Message
                 </button>
@@ -2662,9 +2447,8 @@ deleteExpense(index) {
     submitSupportRequest() {
         const subject = document.getElementById('support-subject').value;
         const message = document.getElementById('support-message').value;
-        const email = document.getElementById('support-email').value;
         
-        if (!subject || !message || !email) {
+        if (!subject || !message) {
             this.showAlert('Please fill in all fields', 'error');
             return;
         }
@@ -2711,76 +2495,6 @@ deleteExpense(index) {
     capitalizeFirstLetter(string) {
         return string.charAt(0).toUpperCase() + string.slice(1);
     }
-
-    loadSampleData() {
-        // Sample waiters
-        this.waiters = [
-            { id: 1, name: 'John Doe', shift: 'morning', tables: '1-5,10', color: '#4361ee' },
-            { id: 2, name: 'Jane Smith', shift: 'afternoon', tables: '6-9,12', color: '#f72585' },
-            { id: 3, name: 'Mike Johnson', shift: 'night', tables: '11,13-15', color: '#4cc9f0' }
-        ];
-        
-        // Sample menu items
-        this.menuItems = [
-            { id: 1, name: 'Chicken Curry', price: 12000, category: 'Main Course', type: 'food' },
-            { id: 2, name: 'Beef Steak', price: 15000, category: 'Main Course', type: 'food' },
-            { id: 3, name: 'Vegetable Soup', price: 8000, category: 'Starter', type: 'food' },
-            { id: 4, name: 'Soda', price: 2000, category: 'Beverages', type: 'drink' },
-            { id: 5, name: 'Room Service', price: 5000, category: 'Services', type: 'service' }
-        ];
-        
-        // Sample orders
-        const today = new Date().toISOString().split('T')[0];
-        this.orders = [
-            {
-                id: 'ORD-1001',
-                date: today,
-                waiter: 'John Doe',
-                waiterId: 1,
-                table: 5,
-                items: [
-                    { id: 1, name: 'Chicken Curry', quantity: 2, price: 12000 },
-                    { id: 4, name: 'Soda', quantity: 2, price: 2000 }
-                ],
-                total: 28000,
-                paymentMethod: 'mpesa',
-                status: 'completed'
-            },
-            {
-                id: 'ORD-1002',
-                date: today,
-                waiter: 'Jane Smith',
-                waiterId: 2,
-                table: 8,
-                items: [
-                    { id: 2, name: 'Beef Steak', quantity: 1, price: 15000 },
-                    { id: 3, name: 'Vegetable Soup', quantity: 1, price: 8000 }
-                ],
-                total: 23000,
-                paymentMethod: 'cash',
-                status: 'pending'
-            }
-        ];
-        
-        // Sample expenses
-        this.expenses = [
-            { name: 'Groceries', amount: 50000, date: today },
-            { name: 'Utilities', amount: 15000, date: today }
-        ];
-        
-        // Sample vouchers
-        this.vouchers = [
-            { id: 'VOU-5001', date: today, orders: 250, price: 5000, remaining: 150 },
-            { id: 'VOU-5002', date: today, orders: 500, price: 10000, remaining: 500 }
-        ];
-        
-        // Save to localStorage
-        localStorage.setItem('hoteza_waiters', JSON.stringify(this.waiters));
-        localStorage.setItem('hoteza_menuItems', JSON.stringify(this.menuItems));
-        localStorage.setItem('hoteza_orders', JSON.stringify(this.orders));
-        localStorage.setItem('hoteza_expenses', JSON.stringify(this.expenses));
-        localStorage.setItem('hoteza_vouchers', JSON.stringify(this.vouchers));
-    }
 }
 
 // Initialize the app when DOM is loaded
@@ -2813,21 +2527,4 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         document.body.appendChild(mobileMenuBtn);
     }
-    
-    // Close sidebar when clicking outside on mobile
-    document.addEventListener('click', (e) => {
-        const sidebar = document.getElementById('sidebar');
-        if (sidebar && window.innerWidth <= 1024 && !e.target.closest('#sidebar') && 
-            !e.target.closest('#menu-toggle') && !e.target.closest('.mobile-menu-toggle')) {
-            sidebar.classList.remove('active');
-        }
-    });
-    
-    // Handle window resize
-    window.addEventListener('resize', () => {
-        if (window.innerWidth > 1024) {
-            const sidebar = document.getElementById('sidebar');
-            if (sidebar) sidebar.classList.remove('active');
-        }
-    });
 });
